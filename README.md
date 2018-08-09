@@ -3,3 +3,4 @@ This is an application that implements Markdown Editor. The features included ar
 * Emphasis
 * lists
 * links
+* headers
