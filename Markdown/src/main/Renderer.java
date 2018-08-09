@@ -40,17 +40,19 @@ public class Renderer extends HttpServlet {
 		StringBuilder htmlText = new StringBuilder();
 
 		
+		//headers 
+		rawText = parseHeaders(rawText);
 		
 		//lists
 		rawText = parseList(rawText);
 			
 
-		//for hyperlink
-		rawText = parseLink(rawText);
 		
 		//parsing __ , //, $$, ** 
-		htmlText = emphasis(rawText);
+		rawText = emphasis(rawText);
 
+		//for hyperlink
+		htmlText = parseLink(rawText);
 		
 		//System.out.println(htmlText);
 		response.setContentType("text/html");
@@ -58,6 +60,28 @@ public class Renderer extends HttpServlet {
 	
 	}
 	
+
+	private StringBuilder parseHeaders(StringBuilder rawText) {
+		String head, body;
+		
+		String rawTextString = rawText.toString();
+		Pattern pattern = Pattern.compile("^([#]+)\\ ([a-zA-Z0-9]+)\\n",Pattern.MULTILINE);
+			
+		Matcher matcher = pattern.matcher(rawText);
+		while(matcher.find()){
+			head=matcher.group(1);
+			body=matcher.group(2);
+			//System.out.println("match:"+matcher.group());
+			rawTextString = rawTextString.replaceFirst(matcher.group(),"<h"+head.length()+">"+body+"</h"+head.length()+">" );
+		}
+		
+		
+		if(rawText.length()>0){
+			rawText = new StringBuilder();
+			rawText.append(rawTextString);
+		}
+		return rawText;
+	}
 
 	private StringBuilder emphasis(StringBuilder rawText) {
 		int i,boldFlag=0,italicFlag=0,strikeFlag=0,underlineFlag=0,paraFlag;
@@ -69,6 +93,9 @@ public class Renderer extends HttpServlet {
 			switch(text[i])
 			{
 				case '*':
+					
+					
+					
 					if(i+1!=rawText.length() &&text[i+1]=='*' && boldFlag==0) {
 						if( rawText.indexOf("**",i+2)!=-1 ) {
 						htmlText.append("<b>");
@@ -112,7 +139,7 @@ public class Renderer extends HttpServlet {
 					break;
 				case '_':
 					if(i+1!=rawText.length() && text[i+1]=='_' && underlineFlag==0) {
-						if(rawText.indexOf("__",i+2)!=-1 ) {
+						if(rawText.indexOf("__",i+2)!=-1) {
 						htmlText.append("<u>");
 						underlineFlag=1;
 						i++;
@@ -194,7 +221,9 @@ public class Renderer extends HttpServlet {
 						htmlText.append("<br>");
 					}
 					break;
-				default:
+				case ' ':
+					htmlText.append("&nbsp;"); 
+				default: 
 					htmlText.append(text[i]);
 					break;
 					
@@ -218,18 +247,18 @@ public class Renderer extends HttpServlet {
 		
 		
 		temp.append(rawText);
-		Pattern pattern = Pattern.compile("(^[^a-zA-Z0-9]*(\\ \\*\\ )+[a-zA-Z0-9\\ \\.\\:\\;\\/\\*\\$\\_]+\\n)+",Pattern.MULTILINE);
+		Pattern pattern = Pattern.compile("(^[^a-zA-Z0-9]*(\\ \\*\\ )+[a-zA-Z0-9\\ \\.\\:\\;\\/\\*\\$\\_\\<\\>\\(\\)\\[\\]]+\\n)+",Pattern.MULTILINE);
 		Matcher matcher = pattern.matcher(rawText);
 		
 		
 		while(matcher.find()){
 			
-			temp.insert((matcher.start())+(count*11), "<ul>\n");
-			temp.insert((matcher.end())+(count*11)+5, "\n</ul>");
+			temp.insert((matcher.start())+(count*12), "<ul>\n");
+			temp.insert((matcher.end())+(count*12)+5, "\n</ul>\n");
 			count++;
 		
 		}
-		pattern = Pattern.compile("^[^a-zA-Z0-9]*(\\ \\*\\ )+([a-zA-Z0-9\\ \\.\\:\\;\\/\\*\\$\\_]+\\n)",Pattern.MULTILINE);
+		pattern = Pattern.compile("^[^a-zA-Z0-9]*(\\ \\*\\ )+([a-zA-Z0-9\\ \\.\\:\\;\\/\\*\\$\\_\\>\\<\\(\\)\\[\\]]+\\n)",Pattern.MULTILINE);
 		matcher = pattern.matcher(temp);
 		test1 = matcher.replaceAll("<li>"+"$2"+"</li>");
 		//System.out.println(test1);
@@ -247,18 +276,18 @@ public class Renderer extends HttpServlet {
 		count=0;
 		temp = new StringBuilder();
 		temp.append(rawText);
-		pattern = Pattern.compile("(^[^a-zA-Z]*(\\ [0-9]+\\.\\ )+[a-zA-Z0-9\\ \\.\\:\\;\\/\\*\\$\\_]+\\n)+",Pattern.MULTILINE);
+		pattern = Pattern.compile("(^[^a-zA-Z]*(\\ [0-9]+\\.\\ )+[a-zA-Z0-9\\ \\.\\:\\;\\/\\*\\$\\_\\>\\<\\(\\)\\[\\]]+\\n)+",Pattern.MULTILINE);
 		matcher = pattern.matcher(rawText);
 		
 		
 		while(matcher.find()){
 			
-			temp.insert((matcher.start())+(count*11), "<ol>\n");
-			temp.insert((matcher.end())+(count*11)+5, "\n</ol>");
+			temp.insert((matcher.start())+(count*12), "<ol>\n");
+			temp.insert((matcher.end())+(count*12)+5, "\n</ol>\n");
 			count++;
 		}
 	
-		pattern = Pattern.compile("^[^a-zA-Z]*(\\ [0-9]+\\.\\ )+([a-zA-Z0-9\\ \\.\\:\\;\\/\\*\\$\\_]+\\n)",Pattern.MULTILINE);
+		pattern = Pattern.compile("^[^a-zA-Z]*(\\ [0-9]+\\.\\ )+([a-zA-Z0-9\\ \\.\\:\\;\\/\\*\\$\\_\\>\\<\\(\\)\\[\\]]+\\n)",Pattern.MULTILINE);
 		matcher = pattern.matcher(temp);
 		test2 = matcher.replaceAll("<li>"+"$2"+"</li>");
 		
@@ -278,22 +307,21 @@ public class Renderer extends HttpServlet {
 		int linkCount=0,start,end,i;
 		String rawTextString;
 		ArrayList<String> links =new ArrayList<String>();
-		Pattern pattern = Pattern.compile("\\[.*?\\]\\([a-z|A-Z|0-9|\\.|\\:|/]*\\)");
+		Pattern pattern = Pattern.compile("\\[.*?\\]\\([a-z|A-Z|0-9|\\.|\\:|/\\?]*\\)");
 		Matcher matcher = pattern.matcher(rawText);
 		
 		while(matcher.find()){
 			linkCount++;
 			start=matcher.start();
 			end=matcher.end();
-			
-			String linkText = "<a target =\"_blank\" href=\"";
+			String linkText = "<a href=\"";
 			String temp=rawText.substring(start,end);
 		
 			//actual link
 			for(i=temp.indexOf('(')+1;i<temp.indexOf(')');i++) {
 				linkText = linkText + temp.charAt(i);
 			}
-			linkText = linkText +"\">";
+			linkText = linkText +"\" target=\"_blank\">";
 			//text
 			for(i=temp.indexOf('[')+1;i<temp.indexOf(']');i++) {
 				linkText = linkText+temp.charAt(i);
