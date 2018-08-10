@@ -38,10 +38,10 @@ public class Renderer extends HttpServlet {
 		//getting the text
 		StringBuilder rawText = getText(request);
 		StringBuilder htmlText = new StringBuilder();
-
-		
+	
 		//headers 
 		rawText = parseHeaders(rawText);
+		
 		
 		//lists
 		rawText = parseList(rawText);
@@ -51,8 +51,11 @@ public class Renderer extends HttpServlet {
 		//parsing __ , //, $$, ** 
 		rawText = emphasis(rawText);
 
-		//for hyperlink
+	
+		//for hyperlinks
 		htmlText = parseLink(rawText);
+
+
 		
 		//System.out.println(htmlText);
 		response.setContentType("text/html");
@@ -65,14 +68,16 @@ public class Renderer extends HttpServlet {
 		String head, body;
 		
 		String rawTextString = rawText.toString();
-		Pattern pattern = Pattern.compile("^([#]+)\\ ([a-zA-Z0-9]+)\\n",Pattern.MULTILINE);
+		Pattern pattern = Pattern.compile("([#]+)\\ (.+)",Pattern.MULTILINE);
 			
 		Matcher matcher = pattern.matcher(rawText);
 		while(matcher.find()){
 			head=matcher.group(1);
 			body=matcher.group(2);
-			//System.out.println("match:"+matcher.group());
-			rawTextString = rawTextString.replaceFirst(matcher.group(),"<h"+head.length()+">"+body+"</h"+head.length()+">" );
+			System.out.println("<h"+head.length()+">"+body+"</h"+head.length()+">");
+	
+			rawTextString = rawTextString.replaceFirst("([#]+)\\ (.+)","<h"+head.length()+">"+body+"</h"+head.length()+">" ); 
+		
 		}
 		
 		
@@ -96,7 +101,7 @@ public class Renderer extends HttpServlet {
 					
 					
 					
-					if(i+1!=rawText.length() &&text[i+1]=='*' && boldFlag==0) {
+					if(i+1<text.length &&text[i+1]=='*' && boldFlag==0) {
 						if( rawText.indexOf("**",i+2)!=-1 ) {
 						htmlText.append("<b>");
 						boldFlag=1;
@@ -107,7 +112,7 @@ public class Renderer extends HttpServlet {
 							i++;
 						}
 					}
-					else if(i+1!=rawText.length() &&text[i+1]=='*' && boldFlag==1 ) {
+					else if(i+1<text.length &&text[i+1]=='*' && boldFlag==1 ) {
 						htmlText.append("</b>");
 						boldFlag=0;
 						i++;
@@ -117,7 +122,7 @@ public class Renderer extends HttpServlet {
 					}
 					break;
 				case '$':
-					if(i+1!=rawText.length() && text[i+1]=='$' && strikeFlag==0) {
+					if(i+1<text.length && text[i+1]=='$' && strikeFlag==0) {
 						if(rawText.indexOf("$$",i+2)!=-1 ) {
 						htmlText.append("<s>");
 						strikeFlag=1;
@@ -128,7 +133,7 @@ public class Renderer extends HttpServlet {
 							i++;
 						}
 					}
-					else if(i+1!=rawText.length() && text[i+1]=='$' && strikeFlag==1 ) {
+					else if(i+1<text.length && text[i+1]=='$' && strikeFlag==1 ) {
 						htmlText.append("</s>");
 						strikeFlag=0;
 						i++;
@@ -138,7 +143,7 @@ public class Renderer extends HttpServlet {
 					}
 					break;
 				case '_':
-					if(i+1!=rawText.length() && text[i+1]=='_' && underlineFlag==0) {
+					if(i+1<text.length && text[i+1]=='_' && underlineFlag==0) {
 						if(rawText.indexOf("__",i+2)!=-1) {
 						htmlText.append("<u>");
 						underlineFlag=1;
@@ -150,7 +155,7 @@ public class Renderer extends HttpServlet {
 							i++;
 						}
 					}
-					else if(i+1!=rawText.length() && text[i+1]=='_' && underlineFlag==1 ) {
+					else if(i+1<text.length && text[i+1]=='_' && underlineFlag==1 ) {
 						htmlText.append("</u>");
 						underlineFlag=0;
 						i++;
@@ -161,7 +166,7 @@ public class Renderer extends HttpServlet {
 					break;
 				case '/':
 					if(i-1>=0 && text[i-1]!=':'){
-						if(i+1!=rawText.length() && text[i+1]=='/' && italicFlag==0) {
+						if(i+1<text.length && text[i+1]=='/' && italicFlag==0) {
 							if( rawText.indexOf("//",i+2)!=-1 ) {
 							htmlText.append("<i>");
 							italicFlag=1;
@@ -172,7 +177,7 @@ public class Renderer extends HttpServlet {
 								i++;
 							}
 						}
-						else if(i+1!=rawText.length() &&text[i+1]=='/' && italicFlag==1 ) {
+						else if(i+1<text.length &&text[i+1]=='/' && italicFlag==1 ) {
 							htmlText.append("</i>");
 							italicFlag=0;
 							i++;
@@ -183,7 +188,7 @@ public class Renderer extends HttpServlet {
 						
 					}
 					else if(i-1==-1){
-						if(i+1!=rawText.length() && text[i+1]=='/' && italicFlag==0) {
+						if(i+1<text.length && text[i+1]=='/' && italicFlag==0) {
 							if( rawText.indexOf("//",i+2)!=-1 ) {
 							htmlText.append("<i>");
 							italicFlag=1;
@@ -194,7 +199,7 @@ public class Renderer extends HttpServlet {
 								i++;
 							}
 						}
-						else if(i+1!=rawText.length() &&text[i+1]=='/' && italicFlag==1 ) {
+						else if(i+1<text.length &&text[i+1]=='/' && italicFlag==1 ) {
 							htmlText.append("</i>");
 							italicFlag=0;
 							i++;
@@ -212,12 +217,12 @@ public class Renderer extends HttpServlet {
 				case '\n':
 					paraFlag=0;
 					
-					if(i+1!=text.length && text[i+1]=='\n'){
+					if(i+1<text.length && text[i+1]=='\n'){
 						paraFlag=1;
 						htmlText.append("<p>");
 						i++;
 					}
-					if(i+1!=text.length && text[i+1]!='\n' && paraFlag==0 && i-1>=0 && text[i-1]!='>'){
+					if(i+1<text.length && text[i+1]!='\n' && paraFlag==0 && i-1>=0 && text[i-1]!='>'){
 						htmlText.append("<br>");
 					}
 					break;
@@ -247,7 +252,7 @@ public class Renderer extends HttpServlet {
 		
 		
 		temp.append(rawText);
-		Pattern pattern = Pattern.compile("(^[^a-zA-Z0-9]*(\\ \\*\\ )+[a-zA-Z0-9\\ \\.\\:\\;\\/\\*\\$\\_\\<\\>\\(\\)\\[\\]]+\\n)+",Pattern.MULTILINE);
+		Pattern pattern = Pattern.compile("(^(\\ \\*\\ ){1}.+\\n)+",Pattern.MULTILINE);
 		Matcher matcher = pattern.matcher(rawText);
 		
 		
@@ -258,7 +263,7 @@ public class Renderer extends HttpServlet {
 			count++;
 		
 		}
-		pattern = Pattern.compile("^[^a-zA-Z0-9]*(\\ \\*\\ )+([a-zA-Z0-9\\ \\.\\:\\;\\/\\*\\$\\_\\>\\<\\(\\)\\[\\]]+\\n)",Pattern.MULTILINE);
+		pattern = Pattern.compile("^(\\ \\*\\ ){1}(.+\\n)",Pattern.MULTILINE);
 		matcher = pattern.matcher(temp);
 		test1 = matcher.replaceAll("<li>"+"$2"+"</li>");
 		//System.out.println(test1);
@@ -276,7 +281,7 @@ public class Renderer extends HttpServlet {
 		count=0;
 		temp = new StringBuilder();
 		temp.append(rawText);
-		pattern = Pattern.compile("(^[^a-zA-Z]*(\\ [0-9]+\\.\\ )+[a-zA-Z0-9\\ \\.\\:\\;\\/\\*\\$\\_\\>\\<\\(\\)\\[\\]]+\\n)+",Pattern.MULTILINE);
+		pattern = Pattern.compile("(^(\\ [0-9]+\\.\\ ){1}.+\\n)+",Pattern.MULTILINE);
 		matcher = pattern.matcher(rawText);
 		
 		
@@ -287,7 +292,7 @@ public class Renderer extends HttpServlet {
 			count++;
 		}
 	
-		pattern = Pattern.compile("^[^a-zA-Z]*(\\ [0-9]+\\.\\ )+([a-zA-Z0-9\\ \\.\\:\\;\\/\\*\\$\\_\\>\\<\\(\\)\\[\\]]+\\n)",Pattern.MULTILINE);
+		pattern = Pattern.compile("^(\\ [0-9]+\\.\\ ){1}(.+\\n)",Pattern.MULTILINE);
 		matcher = pattern.matcher(temp);
 		test2 = matcher.replaceAll("<li>"+"$2"+"</li>");
 		
@@ -307,7 +312,7 @@ public class Renderer extends HttpServlet {
 		int linkCount=0,start,end,i;
 		String rawTextString;
 		ArrayList<String> links =new ArrayList<String>();
-		Pattern pattern = Pattern.compile("\\[.*?\\]\\([a-z|A-Z|0-9|\\.|\\:|/\\?]*\\)");
+		Pattern pattern = Pattern.compile("\\[.*?\\]\\([a-zA-Z0-9\\.\\@\\:\\|\\/\\?\\-;:&=\\+]+\\)");
 		Matcher matcher = pattern.matcher(rawText);
 		
 		while(matcher.find()){
@@ -335,7 +340,7 @@ public class Renderer extends HttpServlet {
 			
 			rawTextString =rawText.toString();
 			for(i=0;i<linkCount;i++){
-				rawTextString = rawTextString.replaceFirst("\\[.*?\\]\\([a-z|A-Z|0-9|\\.|\\:|/]*\\)", links.get(i));
+				rawTextString = rawTextString.replaceFirst("\\[.*?\\]\\([a-zA-Z0-9\\.\\@\\:\\|\\/\\?\\-;:&=\\+]+\\)", links.get(i));
 			}
 			
 			if(rawText.length()>0){
