@@ -69,22 +69,13 @@ public class Renderer extends HttpServlet {
 		
 		String rawTextString = rawText.toString();
 		Pattern pattern = Pattern.compile("([#]+)\\ (.+)",Pattern.MULTILINE);
-			
 		Matcher matcher = pattern.matcher(rawText);
 		while(matcher.find()){
 			head=matcher.group(1);
 			body=matcher.group(2);
-			System.out.println("<h"+head.length()+">"+body+"</h"+head.length()+">");
-	
 			rawTextString = rawTextString.replaceFirst("([#]+)\\ (.+)","<h"+head.length()+">"+body+"</h"+head.length()+">" ); 
-		
 		}
-		
-		
-		if(rawText.length()>0){
-			rawText = new StringBuilder();
-			rawText.append(rawTextString);
-		}
+		rawText = appendText(rawText, rawTextString);
 		return rawText;
 	}
 
@@ -239,68 +230,87 @@ public class Renderer extends HttpServlet {
 	}
 
 	private StringBuilder parseList(StringBuilder rawText) {
-		String rawTextString,test1,test2;
-		int count=0,listCount=0;
+		String rawTextString;
+		Pattern pattern = null;
+		Matcher matcher = null;
+		int i, maxPrefixLength=0,t=0;
+		
 		//unordered
-		StringBuilder temp = new StringBuilder();
-
 		
-		
-		
-		
-		
-		
-		
-		Pattern pattern = Pattern.compile("((^(\\ \\*\\ ){1}.+\\n)+)",Pattern.MULTILINE);
-		Matcher matcher = pattern.matcher(rawText);
-		
-		test1 = matcher.replaceAll("<ul>\n"+"$1"+"</ul>");
-		System.out.println(test1);
-		if(rawText.length()>0){
-			rawText = new StringBuilder();
-			rawText.append(test1);
-		}
-		pattern = Pattern.compile("^(\\ \\*\\ ){1}(.+\\n)",Pattern.MULTILINE);
-		matcher = pattern.matcher(temp);
-		test1 = matcher.replaceAll("<li>"+"$2"+"</li>");
-		//System.out.println(test1);
-				
-				
-				
-	
-
-		if(rawText.length()>0){
-			rawText = new StringBuilder();
-			rawText.append(test1);
-		}
-	
-		//ordered
-		count=0;
-		temp = new StringBuilder();
-		temp.append(rawText);
-		pattern = Pattern.compile("(^(\\ [0-9]+\\.\\ ){1}.+\\n)+",Pattern.MULTILINE);
+		//finding max limit
+		pattern = Pattern.compile("^((\\ +)\\*\\ ){1}.+\\n",Pattern.MULTILINE);
 		matcher = pattern.matcher(rawText);
-		
-		
 		while(matcher.find()){
+			String prefix = matcher.group(2);
 			
-			temp.insert((matcher.start())+(count*12), "<ol>\n");
-			temp.insert((matcher.end())+(count*12)+5, "\n</ol>\n");
-			count++;
+			if(prefix.length()>maxPrefixLength){
+				maxPrefixLength = prefix.length();
+			}
 		}
-	
-		pattern = Pattern.compile("^(\\ [0-9]+\\.\\ ){1}(.+\\n)",Pattern.MULTILINE);
-		matcher = pattern.matcher(temp);
-		test2 = matcher.replaceAll("<li>"+"$2"+"</li>");
-		
-		
-		
-		
-	//	System.out.println(test2);
-		if(rawText.length()>0){
-			rawText = new StringBuilder();
-			rawText.append(test2);
+				
+		//Inserting ul tag
+		for(i=1;i<=maxPrefixLength;i++){
+			
+			pattern = Pattern.compile("(^(\\ {"+i+"}\\*\\ ){1}.+\\n(^(\\ {"+i+",}\\*\\ ){1}.+\\n)*)+",Pattern.MULTILINE);
+			matcher = pattern.matcher(rawText);
+			if(i==1){
+				rawTextString = matcher.replaceAll("<ul>\n"+"$1"+"</ul>\n");
+			}
+			else{
+				rawTextString = matcher.replaceAll("<ul>\n"+"$1"+"</ul>\n</li>\n");
+			}
+			rawText = appendText(rawText, rawTextString);
 		}
+		//inserting li tag
+		pattern = Pattern.compile("^(\\ +\\*\\ ){1}(.+\\n)(<ul>)",Pattern.MULTILINE);
+		matcher = pattern.matcher(rawText);
+		rawTextString = matcher.replaceAll("<li>"+"$2"+"<ul>");
+		rawText = appendText(rawText, rawTextString);
+		
+		pattern = Pattern.compile("^(\\ +\\*\\ ){1}(.+\\n)",Pattern.MULTILINE);
+		matcher = pattern.matcher(rawText);
+		rawTextString = matcher.replaceAll("<li>"+"$2"+"</li>");
+		rawText = appendText(rawText, rawTextString);
+
+		
+		//ordered
+		//finding max limit
+		maxPrefixLength = 0;	
+		pattern = Pattern.compile("^((\\ +)[0-9]+\\.\\ ){1}.+\\n",Pattern.MULTILINE);
+		matcher = pattern.matcher(rawText);
+		while(matcher.find()){
+			String prefix = matcher.group(2);
+			
+			if(prefix.length()>maxPrefixLength){
+				maxPrefixLength = prefix.length();
+			}
+		}
+		//inserting ol tag
+		for(i=1;i<=maxPrefixLength;i++){
+			
+			pattern = Pattern.compile("(^(\\ {"+i+"}[0-9]+\\.\\ ){1}.+\\n(^(\\ {"+i+",}[0-9]+\\.\\ ){1}.+\\n)*)+",Pattern.MULTILINE);
+			matcher = pattern.matcher(rawText);
+			if(i==1){
+				rawTextString = matcher.replaceAll("<ol>\n"+"$1"+"</ol>\n");
+			}
+			else{
+				rawTextString = matcher.replaceAll("<ol>\n"+"$1"+"</ol>\n</li>\n");
+			}
+			rawText = appendText(rawText, rawTextString);
+		}
+
+		//inserting li tag
+		pattern = Pattern.compile("^(\\ +[0-9]+\\.\\ ){1}(.+\\n)(<ol>)",Pattern.MULTILINE);
+		matcher = pattern.matcher(rawText);
+		rawTextString = matcher.replaceAll("<li>"+"$2"+"<ol>");
+		rawText = appendText(rawText, rawTextString);
+		
+		pattern = Pattern.compile("^(\\ +[0-9]+\\.\\ ){1}(.+\\n)",Pattern.MULTILINE);
+		matcher = pattern.matcher(rawText);
+		rawTextString = matcher.replaceAll("<li>"+"$2"+"</li>");
+		rawText = appendText(rawText, rawTextString);
+
+		
 		return rawText;
 	}
 
@@ -340,10 +350,8 @@ public class Renderer extends HttpServlet {
 				rawTextString = rawTextString.replaceFirst("\\[.*?\\]\\([a-zA-Z0-9\\.\\@\\:\\|\\/\\?\\-;:&=\\+]+\\)", links.get(i));
 			}
 			
-			if(rawText.length()>0){
-				rawText = new StringBuilder();
-				rawText.append(rawTextString);
-			}
+			rawText = appendText(rawText, rawTextString);
+			
 		return rawText;
 	}
 
@@ -377,6 +385,13 @@ public class Renderer extends HttpServlet {
 		return rawText;
 	}
 
+	private StringBuilder appendText(StringBuilder rawText, String string){
+		if(rawText.length()>0){
+			rawText = new StringBuilder();
+			rawText.append(string);
+		}
+		return rawText;
+	}
 	/**
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
 	 */

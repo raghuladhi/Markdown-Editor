@@ -6,7 +6,7 @@ var text_area = document.getElementById("text_area");
 var rendered_html = document.getElementById("rendered_html");
 var iframe = document.getElementById("rendered_text");
 var btn = document.getElementById("btn");
-function exec(){
+function execute(){
 	var input_text = document.getElementById("text_area").value;
 	fetch('http://localhost:8081/Markdown/render',{
 		method:'POST',
