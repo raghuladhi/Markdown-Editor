@@ -251,17 +251,14 @@ public class Renderer extends HttpServlet {
 		
 		
 		
-		temp.append(rawText);
-		Pattern pattern = Pattern.compile("(^(\\ \\*\\ ){1}.+\\n)+",Pattern.MULTILINE);
+		Pattern pattern = Pattern.compile("((^(\\ \\*\\ ){1}.+\\n)+)",Pattern.MULTILINE);
 		Matcher matcher = pattern.matcher(rawText);
 		
-		
-		while(matcher.find()){
-			
-			temp.insert((matcher.start())+(count*12), "<ul>\n");
-			temp.insert((matcher.end())+(count*12)+5, "\n</ul>\n");
-			count++;
-		
+		test1 = matcher.replaceAll("<ul>\n"+"$1"+"</ul>");
+		System.out.println(test1);
+		if(rawText.length()>0){
+			rawText = new StringBuilder();
+			rawText.append(test1);
 		}
 		pattern = Pattern.compile("^(\\ \\*\\ ){1}(.+\\n)",Pattern.MULTILINE);
 		matcher = pattern.matcher(temp);
