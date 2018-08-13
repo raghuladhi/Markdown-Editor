@@ -242,12 +242,101 @@ public class Renderer extends HttpServlet {
 		matcher = pattern.matcher(rawText);
 		while(matcher.find()){
 			String prefix = matcher.group(2);
-			
 			if(prefix.length()>maxPrefixLength){
 				maxPrefixLength = prefix.length();
 			}
 		}
 				
+		//inserting ul tags
+		
+		for(i=1;i<=maxPrefixLength;i++){
+			
+			pattern = Pattern.compile("(^(\\ {"+i+"}\\*\\ ){1}.+\\n((^(\\ {"+i+
+					",}\\*{1}\\ ){1}.+\\n)|^(\\ {"+(i+1)+
+					",}[0-9]+\\.\\ .+\\n))*)+",Pattern.MULTILINE);
+			matcher = pattern.matcher(rawText);
+			if(i==1){
+				rawTextString = matcher.replaceAll("<ul>\n"+"$1"+"</ul>\n");
+			}
+			else{
+				rawTextString = matcher.replaceAll("<ul>\n"+"$1"+"</ul>\n</li>\n");
+			}
+			rawText = appendText(rawText, rawTextString);
+		}
+		
+		// ordered list
+		
+		//finding max limit
+		maxPrefixLength = 0;	
+		pattern = Pattern.compile("^((\\ +)[0-9]+\\.\\ ){1}.+\\n",Pattern.MULTILINE);
+		matcher = pattern.matcher(rawText);
+		while(matcher.find()){
+			String prefix = matcher.group(2);
+			
+			if(prefix.length()>maxPrefixLength){
+				maxPrefixLength = prefix.length();
+			}
+		}
+
+		//inserting ol tag
+		
+		for(i=1;i<=maxPrefixLength;i++){
+			
+			pattern = Pattern.compile("(^(\\ {"+i+"}[0-9]+\\.\\ ){1}.+\\n((^(\\ {"+i+
+					",}(\\*|[0-9]+\\.){1}\\ ){1}.+\\n)|^(</li>\\n)|^(</ul>\\n)|^(<ul>\\n\\ {"+
+					(i+1)+",}\\*\\ .+\\n))*)",Pattern.MULTILINE);
+			matcher = pattern.matcher(rawText);
+			if(i==1){
+				rawTextString = matcher.replaceAll("<ol>\n"+"$1"+"</ol>\n");
+			}
+			else{
+				rawTextString = matcher.replaceAll("<ol>\n"+"$1"+"</ol>\n</li>\n");
+			}
+			rawText = appendText(rawText, rawTextString);
+		}
+		
+		
+		//inserting li tag for ul
+		pattern = Pattern.compile("^(\\ +\\*\\ ){1}(.+\\n)((<ul>)|(<ol>))",Pattern.MULTILINE);
+		matcher = pattern.matcher(rawText);
+		rawTextString = matcher.replaceAll("<li>"+"$2"+"$3");
+		rawText = appendText(rawText, rawTextString);
+		
+		pattern = Pattern.compile("^(\\ +\\*\\ ){1}(.+\\n)",Pattern.MULTILINE);
+		matcher = pattern.matcher(rawText);
+		rawTextString = matcher.replaceAll("<li>"+"$2"+"</li>");
+		rawText = appendText(rawText, rawTextString);
+
+		//inserting li tag for ol
+		pattern = Pattern.compile("^(\\ +[0-9]+\\.\\ ){1}(.+\\n)((<ul>)|(<ol>))",Pattern.MULTILINE);
+		matcher = pattern.matcher(rawText);
+		rawTextString = matcher.replaceAll("<li>"+"$2"+"$3");
+		rawText = appendText(rawText, rawTextString);
+		
+		pattern = Pattern.compile("^(\\ +[0-9]+\\.\\ ){1}(.+\\n)",Pattern.MULTILINE);
+		matcher = pattern.matcher(rawText);
+		rawTextString = matcher.replaceAll("<li>"+"$2"+"</li>");
+		rawText = appendText(rawText, rawTextString);
+
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		/*//ori
 		//Inserting ul tag
 		for(i=1;i<=maxPrefixLength;i++){
 			
@@ -308,8 +397,7 @@ public class Renderer extends HttpServlet {
 		pattern = Pattern.compile("^(\\ +[0-9]+\\.\\ ){1}(.+\\n)",Pattern.MULTILINE);
 		matcher = pattern.matcher(rawText);
 		rawTextString = matcher.replaceAll("<li>"+"$2"+"</li>");
-		rawText = appendText(rawText, rawTextString);
-
+		rawText = appendText(rawText, rawTextString);*/
 		
 		return rawText;
 	}
@@ -389,6 +477,8 @@ public class Renderer extends HttpServlet {
 		if(rawText.length()>0){
 			rawText = new StringBuilder();
 			rawText.append(string);
+		} else {
+			
 		}
 		return rawText;
 	}
